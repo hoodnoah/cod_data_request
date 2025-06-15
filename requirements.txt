@@ -1,0 +1,12 @@
+numpy
+pandas
+ipykernel
+neo4j
+tqdm
+scikit-learn
+pyarrow
+networkx
+gensim # Word2Vec for Node2Vec-style embeddings
+node2vec
+torch
+torch-geometric
