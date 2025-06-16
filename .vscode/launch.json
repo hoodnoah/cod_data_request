@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Ingest",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/ingest",
+      "args": ["${workspaceFolder}/data/sample_account_data.html"]
+    }
+  ]
+}

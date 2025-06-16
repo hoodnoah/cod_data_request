@@ -13,11 +13,13 @@ func FindTableAfterHeader(doc *goquery.Document, headerText string) ([]string, [
 	var rows [][]string
 
 	found := false
-	doc.Find("h2").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		if strings.Contains(strings.ToLower(s.Text()), strings.ToLower(headerText)) {
-			table := s.NextFiltered("table")
+	doc.Find("h1").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		actualHeader := strings.TrimSpace(s.Text())
+		if strings.EqualFold(actualHeader, strings.TrimSpace(headerText)) {
+			table := s.NextAllFiltered("table").First()
+
 			if table.Length() == 0 {
-				return false
+				return true // keep searching
 			}
 
 			// extract header
@@ -28,11 +30,12 @@ func FindTableAfterHeader(doc *goquery.Document, headerText string) ([]string, [
 				return false // only do the first row for headers
 			})
 
-			// Extract row
+			// Extract data rows
 			table.Find("tr").Each(func(i int, tr *goquery.Selection) {
 				if i == 0 {
 					return // skip header row
 				}
+
 				var row []string
 				tr.Find("td").Each(func(_ int, td *goquery.Selection) {
 					row = append(row, strings.TrimSpace(td.Text()))
@@ -42,9 +45,9 @@ func FindTableAfterHeader(doc *goquery.Document, headerText string) ([]string, [
 				}
 			})
 			found = true
-			return false
+			return false // break loop
 		}
-		return true
+		return true // keep searching
 	})
 
 	if !found {

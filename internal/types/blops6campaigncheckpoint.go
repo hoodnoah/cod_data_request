@@ -2,8 +2,11 @@ package types
 
 import (
 	// std
+	"encoding/csv"
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	// external
@@ -14,6 +17,18 @@ import (
 )
 
 type fieldParser func(string) (any, error)
+
+var headerLabels = []string{
+	"timestamp_utc",
+	"account_type",
+	"device_type",
+	"difficulty",
+	"level_name",
+	"checkpoint",
+	"checkpoint_duration_s",
+	"deaths",
+	"fails",
+}
 
 var fieldParsers = map[string]fieldParser{
 	"UTC Timestamp": func(s string) (any, error) {
@@ -52,7 +67,7 @@ var fieldParsers = map[string]fieldParser{
 }
 
 type Blops6CampaignCheckpoint struct {
-	Timestamp          int64         `parquet:"name=timestamp, type=INT64, convertedtype=DATE"`
+	Timestamp          time.Time     `parquet:"name=timestamp_utc, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN"`
 	AccountType        string        `parquet:"name=account_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
 	DeviceType         string        `parquet:"name=device_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
 	Difficulty         string        `parquet:"name=difficulty, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
@@ -61,6 +76,20 @@ type Blops6CampaignCheckpoint struct {
 	CheckpointDuration time.Duration `parquet:"name=checkpoint_duration, type=FLOAT"`
 	Deaths             uint          `parquet:"name=deaths, type=UINT32"`
 	Fails              uint          `parquet:"name=fails, type=UINT32"`
+}
+
+func (b *Blops6CampaignCheckpoint) ToStringSlice() []string {
+	return []string{
+		b.Timestamp.UTC().Format("2006-01-02 15:04:05"),
+		b.AccountType,
+		b.DeviceType,
+		b.Difficulty,
+		b.LevelName,
+		b.Checkpoint,
+		strconv.FormatInt(int64(b.CheckpointDuration.Seconds()), 10),
+		strconv.FormatUint(uint64(b.Deaths), 10),
+		strconv.FormatUint(uint64(b.Fails), 10),
+	}
 }
 
 // parses a BlackOps6CampaignCheckpoint from a header and its rows
@@ -101,22 +130,21 @@ func fromRow(header []string, row []string) (*Blops6CampaignCheckpoint, error) {
 			deviceType = val.(string)
 		case "Difficulty":
 			difficulty = val.(string)
+		case "Level Name":
+			levelName = val.(string)
 		case "Checkpoint":
 			checkpoint = val.(string)
 		case "Checkpoint Duration":
 			checkpointDuration = val.(time.Duration)
 		case "Deaths":
-			deaths = uint(val.(int))
+			deaths = uint(val.(int64))
 		case "Fails":
-			fails = uint(val.(int))
+			fails = uint(val.(int64))
 		}
 	}
 
-	// convert timestamp to int64 days since epoch
-	days := int64(timestamp.Unix() / 86400)
-
 	return &Blops6CampaignCheckpoint{
-		Timestamp:          days,
+		Timestamp:          timestamp.UTC(),
 		AccountType:        accountType,
 		DeviceType:         deviceType,
 		Difficulty:         difficulty,
@@ -156,4 +184,29 @@ func FromHtml(doc *goquery.Document) ([]*Blops6CampaignCheckpoint, error) {
 	}
 
 	return result, nil
+}
+
+func ToCSV(outputPath string, checkpoints []*Blops6CampaignCheckpoint) error {
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write the header
+	if err := writer.Write(headerLabels); err != nil {
+		return err
+	}
+
+	// Write the data rows
+	for _, c := range checkpoints {
+		if err := writer.Write(c.ToStringSlice()); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/PuerkitoBio/goquery"
 
@@ -11,14 +12,19 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatalf("Usage: %s <input.html>", os.Args[0])
+	// define flags
+	inputPath := flag.String("input", "", "Path to the HTML file (required)")
+	csvDir := flag.String("csv", "", "Directory to write CSV output (optional)")
+	flag.Parse()
+
+	if *inputPath == "" {
+		log.Fatal("You must specify --input HTML file path")
 	}
 
-	path := os.Args[1]
-	f, err := os.Open(path)
+	// Open, parse HTML file
+	f, err := os.Open(*inputPath)
 	if err != nil {
-		log.Fatalf("Failed to open file %s: %v", path, err)
+		log.Fatalf("Failed to open file %s: %v", *inputPath, err)
 	}
 	defer f.Close()
 
@@ -32,9 +38,11 @@ func main() {
 		log.Fatalf("Failed to parse checkpoint records: %v", err)
 	}
 
-	for i, r := range records {
-		fmt.Printf("[%d] %+v\n", i+1, *r)
+	if *csvDir != "" {
+		outputPath := filepath.Join(*csvDir, "black_ops_6_campaign_checkpoints.csv")
+		if err := types.ToCSV(outputPath, records); err != nil {
+			log.Fatalf("Failed to write CSV: %v", err)
+		}
+		log.Printf("CSV saved to %s\n", outputPath)
 	}
-
-	fmt.Printf("\n✅ Parsed %d checkpoint records successfully.\n", len(records))
 }
