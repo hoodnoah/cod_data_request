@@ -30,6 +30,7 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
+          go = pkgs.go_1_24;
         in
         {
           default = pkgs.mkShell {
@@ -40,18 +41,27 @@
               dotnetCorePackages.sdk_9_0
               curl
               git
+
+              # --- Go toolchain ---
+              go
+              gotools
+              golangci-lint
+              gopls
+              gomodifytags
+              gotests
+              godef
             ];
 
-	    shellHook = ''
-		if [ ! -d .venv ]; then
-		  echo "Creating python virtual environment..."
-		  python3 -m venv .venv
-		fi
+            shellHook = ''
+              if [ ! -d .venv ]; then
+                echo "Creating python virtual environment..."
+                python3 -m venv .venv
+              fi
 
-	        .venv/bin/pip install --upgrade pip wheel
-	        .venv/bin/pip install -r requirements.txt
-		source .venv/bin/activate
-	    '';
+              .venv/bin/pip install --upgrade pip wheel
+              .venv/bin/pip install -r requirements.txt
+              source .venv/bin/activate
+            '';
           };
         }
       );
