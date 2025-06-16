@@ -8,7 +8,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
-	"github.com/hoodnoah/cod_data_request/internal/types"
+	blops "github.com/hoodnoah/cod_data_request/internal/blops6campaigncheckpoint"
 )
 
 func main() {
@@ -34,14 +34,14 @@ func main() {
 		log.Fatalf("Failed to parse HTML: %v", err)
 	}
 
-	records, err := types.FromHtml(doc)
+	records, err := blops.FromHtml(doc)
 	if err != nil {
 		log.Fatalf("Failed to parse checkpoint records: %v", err)
 	}
 
 	if *csvDir != "" {
 		outputPath := filepath.Join(*csvDir, "black_ops_6_campaign_checkpoints.csv")
-		if err := types.ToCSV(outputPath, records); err != nil {
+		if err := blops.ToCSV(outputPath, records); err != nil {
 			log.Fatalf("Failed to write CSV: %v", err)
 		}
 		log.Printf("CSV saved to %s\n", outputPath)
@@ -49,7 +49,7 @@ func main() {
 
 	if *parquetDir != "" {
 		outputPath := filepath.Join(*parquetDir, "black_ops_6_campaign_checkpoints.parquet")
-		if err := types.ToParquet(outputPath, records); err != nil {
+		if err := blops.ToParquet(outputPath, records); err != nil {
 			log.Fatalf("Failed to write parquet: %v", err)
 		}
 		log.Printf("Parquet saved to %s\n", outputPath)
