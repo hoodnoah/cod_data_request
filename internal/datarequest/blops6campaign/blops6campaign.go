@@ -186,7 +186,7 @@ func fromRow(header []string, row []string) (*Checkpoint, error) {
 }
 
 func FromHtml(doc *goquery.Document) (Checkpoints, error) {
-	header, rows, err := helpers.FindTableAfterHeader(doc, "Call of Duty: Black Ops 6")
+	header, rows, err := helpers.FindTable(doc, "Call of Duty: Black Ops 6", "Campaign Checkpoint Data (reverse chronological)")
 	if err != nil {
 		return nil, err
 	}
