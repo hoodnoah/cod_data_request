@@ -1,14 +1,16 @@
 package main
 
 import (
+	// std
 	"flag"
 	"log"
 	"os"
-	"path/filepath"
 
+	// external
 	"github.com/PuerkitoBio/goquery"
 
-	blops "github.com/hoodnoah/cod_data_request/internal/blops6campaigncheckpoint"
+	// internal
+	"github.com/hoodnoah/cod_data_request/internal/datarequest"
 )
 
 func main() {
@@ -34,24 +36,22 @@ func main() {
 		log.Fatalf("Failed to parse HTML: %v", err)
 	}
 
-	records, err := blops.FromHtml(doc)
-	if err != nil {
-		log.Fatalf("Failed to parse checkpoint records: %v", err)
+	datarequest := datarequest.NewCodDataRequest()
+	if err := datarequest.ParseHtml(doc); err != nil {
+		log.Fatalf("failed to parse cod data request: %v", err)
 	}
 
 	if *csvDir != "" {
-		outputPath := filepath.Join(*csvDir, "black_ops_6_campaign_checkpoints.csv")
-		if err := blops.ToCSV(outputPath, records); err != nil {
-			log.Fatalf("Failed to write CSV: %v", err)
+		if err := datarequest.ToCSV(*csvDir); err != nil {
+			log.Fatalf("failed to write records to CSV: %v", err)
 		}
-		log.Printf("CSV saved to %s\n", outputPath)
+		log.Printf("CSV saved to %s\n", *csvDir)
 	}
 
 	if *parquetDir != "" {
-		outputPath := filepath.Join(*parquetDir, "black_ops_6_campaign_checkpoints.parquet")
-		if err := blops.ToParquet(outputPath, records); err != nil {
-			log.Fatalf("Failed to write parquet: %v", err)
+		if err := datarequest.ToParquet(*parquetDir); err != nil {
+			log.Fatalf("failed to write records to parquet: %v", err)
 		}
-		log.Printf("Parquet saved to %s\n", outputPath)
+		log.Printf("Parquet saved to %s\n", *parquetDir)
 	}
 }

@@ -1,18 +1,16 @@
-package types
+package blops6campaign
 
 import (
 	// std
-	"encoding/csv"
+
 	"errors"
 	"fmt"
-	"os"
+	"path"
 	"strconv"
 	"time"
 
 	// external
 	"github.com/PuerkitoBio/goquery"
-	"github.com/xitongsys/parquet-go/parquet"
-	"github.com/xitongsys/parquet-go/writer"
 
 	// internal
 	"github.com/hoodnoah/cod_data_request/internal/helpers"
@@ -68,7 +66,7 @@ var fieldParsers = map[string]fieldParser{
 	},
 }
 
-type Blops6CampaignCheckpoint struct {
+type Checkpoint struct {
 	Timestamp          time.Time
 	AccountType        string
 	DeviceType         string
@@ -80,7 +78,9 @@ type Blops6CampaignCheckpoint struct {
 	Fails              uint
 }
 
-type Blops6CampaignCheckpointExport struct {
+type Checkpoints []*Checkpoint
+
+type checkpointExport struct {
 	Timestamp          int64   `parquet:"name=timestamp_utc, type=INT64, convertedtype=TIMESTAMP_MILLIS"`
 	AccountType        string  `parquet:"name=account_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
 	DeviceType         string  `parquet:"name=device_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
@@ -92,8 +92,8 @@ type Blops6CampaignCheckpointExport struct {
 	Fails              int32   `parquet:"name=fails, type=INT32"`
 }
 
-func (b *Blops6CampaignCheckpoint) ToExport() *Blops6CampaignCheckpointExport {
-	return &Blops6CampaignCheckpointExport{
+func (b *Checkpoint) ToExport() any {
+	return &checkpointExport{
 		Timestamp:          b.Timestamp.UnixMilli(),
 		AccountType:        b.AccountType,
 		DeviceType:         b.DeviceType,
@@ -106,7 +106,7 @@ func (b *Blops6CampaignCheckpoint) ToExport() *Blops6CampaignCheckpointExport {
 	}
 }
 
-func (b *Blops6CampaignCheckpoint) ToStringSlice() []string {
+func (b *Checkpoint) ToStringSlice() []string {
 	return []string{
 		b.Timestamp.UTC().Format("2006-01-02 15:04:05"),
 		b.AccountType,
@@ -121,7 +121,7 @@ func (b *Blops6CampaignCheckpoint) ToStringSlice() []string {
 }
 
 // parses a BlackOps6CampaignCheckpoint from a header and its rows
-func fromRow(header []string, row []string) (*Blops6CampaignCheckpoint, error) {
+func fromRow(header []string, row []string) (*Checkpoint, error) {
 	if len(row) == 0 {
 		return nil, errors.New("no rows to parse")
 	}
@@ -171,7 +171,7 @@ func fromRow(header []string, row []string) (*Blops6CampaignCheckpoint, error) {
 		}
 	}
 
-	return &Blops6CampaignCheckpoint{
+	return &Checkpoint{
 		Timestamp:          timestamp.UTC(),
 		AccountType:        accountType,
 		DeviceType:         deviceType,
@@ -185,7 +185,7 @@ func fromRow(header []string, row []string) (*Blops6CampaignCheckpoint, error) {
 
 }
 
-func FromHtml(doc *goquery.Document) ([]*Blops6CampaignCheckpoint, error) {
+func FromHtml(doc *goquery.Document) (Checkpoints, error) {
 	header, rows, err := helpers.FindTableAfterHeader(doc, "Call of Duty: Black Ops 6")
 	if err != nil {
 		return nil, err
@@ -198,7 +198,7 @@ func FromHtml(doc *goquery.Document) ([]*Blops6CampaignCheckpoint, error) {
 		return nil, errors.New("no rows found")
 	}
 
-	var result []*Blops6CampaignCheckpoint
+	var result []*Checkpoint
 
 	for i, row := range rows {
 		res, err := fromRow(header, row)
@@ -214,59 +214,14 @@ func FromHtml(doc *goquery.Document) ([]*Blops6CampaignCheckpoint, error) {
 	return result, nil
 }
 
-func ToCSV(outputPath string, checkpoints []*Blops6CampaignCheckpoint) error {
-	file, err := os.Create(outputPath)
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-
-	// Write the header
-	if err := writer.Write(headerLabels); err != nil {
-		return err
-	}
-
-	// Write the data rows
-	for _, c := range checkpoints {
-		if err := writer.Write(c.ToStringSlice()); err != nil {
-			return err
-		}
-	}
-	return nil
+// writes the checkpoints to CSV at the provided path
+func ToCSV(outputDir string, checkpoints Checkpoints) error {
+	filename := path.Join(outputDir, "black_ops_6_campaign_checkpoints.csv")
+	return helpers.ToCSV(filename, headerLabels, checkpoints)
 }
 
-func ToParquet(outputPath string, checkpoints []*Blops6CampaignCheckpoint) error {
-	// create file
-	fw, err := os.Create(outputPath)
-	if err != nil {
-		return err
-	}
-	defer fw.Close()
-
-	// create parquet writer
-	pw, err := writer.NewParquetWriterFromWriter(fw, new(Blops6CampaignCheckpointExport), 4)
-	if err != nil {
-		return err
-	}
-
-	pw.RowGroupSize = 128 * 1024 * 1024 // 128MB
-	pw.CompressionType = parquet.CompressionCodec_SNAPPY
-
-	// Write each record
-	for _, checkpoint := range checkpoints {
-		export := *checkpoint.ToExport()
-		// set duration to seconds
-		if err := pw.Write(export); err != nil {
-			return err
-		}
-	}
-
-	if err = pw.WriteStop(); err != nil {
-		return err
-	}
-	return nil
+// writes the checkpoints to parquet at the provided path
+func ToParquet(outputDir string, checkpoints Checkpoints) error {
+	filename := path.Join(outputDir, "black_ops_6_campaign_checkpoints.parquet")
+	return helpers.ToParquet(filename, checkpoints, new(checkpointExport))
 }
