@@ -37,10 +37,10 @@
             # packages placed on $PATH
             packages = with pkgs; [
               # --- Python toolchain ---
-              python312
-              dotnetCorePackages.sdk_9_0
-              curl
-              git
+              # python312
+              # dotnetCorePackages.sdk_9_0
+              # curl
+              # git
 
               # --- Go toolchain ---
               go
@@ -52,16 +52,16 @@
               godef
             ];
 
-            shellHook = ''
-              if [ ! -d .venv ]; then
-                echo "Creating python virtual environment..."
-                python3 -m venv .venv
-              fi
+            # shellHook = ''
+            #   if [ ! -d .venv ]; then
+            #     echo "Creating python virtual environment..."
+            #     python3 -m venv .venv
+            #   fi
 
-              .venv/bin/pip install --upgrade pip wheel
-              .venv/bin/pip install -r requirements.txt
-              source .venv/bin/activate
-            '';
+            #   .venv/bin/pip install --upgrade pip wheel
+            #   .venv/bin/pip install -r requirements.txt
+            #   source .venv/bin/activate
+            # '';
           };
         }
       );

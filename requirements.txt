@@ -1,7 +1,0 @@
-numpy
-pandas
-ipykernel
-tqdm
-scikit-learn
-pyarrow
-beautifulsoup4
