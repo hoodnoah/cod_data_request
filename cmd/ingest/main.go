@@ -15,6 +15,7 @@ func main() {
 	// define flags
 	inputPath := flag.String("input", "", "Path to the HTML file (required)")
 	csvDir := flag.String("csv", "", "Directory to write CSV output (optional)")
+	parquetDir := flag.String("parquet", "", "Directory to write parquet output (optional)")
 	flag.Parse()
 
 	if *inputPath == "" {
@@ -44,5 +45,13 @@ func main() {
 			log.Fatalf("Failed to write CSV: %v", err)
 		}
 		log.Printf("CSV saved to %s\n", outputPath)
+	}
+
+	if *parquetDir != "" {
+		outputPath := filepath.Join(*parquetDir, "black_ops_6_campaign_checkpoints.parquet")
+		if err := types.ToParquet(outputPath, records); err != nil {
+			log.Fatalf("Failed to write parquet: %v", err)
+		}
+		log.Printf("Parquet saved to %s\n", outputPath)
 	}
 }

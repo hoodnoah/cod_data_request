@@ -11,6 +11,8 @@ import (
 
 	// external
 	"github.com/PuerkitoBio/goquery"
+	"github.com/xitongsys/parquet-go/parquet"
+	"github.com/xitongsys/parquet-go/writer"
 
 	// internal
 	"github.com/hoodnoah/cod_data_request/internal/helpers"
@@ -67,15 +69,41 @@ var fieldParsers = map[string]fieldParser{
 }
 
 type Blops6CampaignCheckpoint struct {
-	Timestamp          time.Time     `parquet:"name=timestamp_utc, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN"`
-	AccountType        string        `parquet:"name=account_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	DeviceType         string        `parquet:"name=device_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	Difficulty         string        `parquet:"name=difficulty, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	LevelName          string        `parquet:"name=level_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	Checkpoint         string        `parquet:"name=checkpoint, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	CheckpointDuration time.Duration `parquet:"name=checkpoint_duration, type=FLOAT"`
-	Deaths             uint          `parquet:"name=deaths, type=UINT32"`
-	Fails              uint          `parquet:"name=fails, type=UINT32"`
+	Timestamp          time.Time
+	AccountType        string
+	DeviceType         string
+	Difficulty         string
+	LevelName          string
+	Checkpoint         string
+	CheckpointDuration time.Duration
+	Deaths             uint
+	Fails              uint
+}
+
+type Blops6CampaignCheckpointExport struct {
+	Timestamp          int64   `parquet:"name=timestamp_utc, type=INT64, convertedtype=TIMESTAMP_MILLIS"`
+	AccountType        string  `parquet:"name=account_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	DeviceType         string  `parquet:"name=device_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	Difficulty         string  `parquet:"name=difficulty, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	LevelName          string  `parquet:"name=level_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	Checkpoint         string  `parquet:"name=checkpoint, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	CheckpointDuration float32 `parquet:"name=checkpoint_duration_s, type=FLOAT"`
+	Deaths             int32   `parquet:"name=deaths, type=INT32"`
+	Fails              int32   `parquet:"name=fails, type=INT32"`
+}
+
+func (b *Blops6CampaignCheckpoint) ToExport() *Blops6CampaignCheckpointExport {
+	return &Blops6CampaignCheckpointExport{
+		Timestamp:          b.Timestamp.UnixMilli(),
+		AccountType:        b.AccountType,
+		DeviceType:         b.DeviceType,
+		Difficulty:         b.Difficulty,
+		LevelName:          b.LevelName,
+		Checkpoint:         b.Checkpoint,
+		CheckpointDuration: float32(b.CheckpointDuration.Seconds()),
+		Deaths:             int32(b.Deaths),
+		Fails:              int32(b.Fails),
+	}
 }
 
 func (b *Blops6CampaignCheckpoint) ToStringSlice() []string {
@@ -207,6 +235,38 @@ func ToCSV(outputPath string, checkpoints []*Blops6CampaignCheckpoint) error {
 		if err := writer.Write(c.ToStringSlice()); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func ToParquet(outputPath string, checkpoints []*Blops6CampaignCheckpoint) error {
+	// create file
+	fw, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer fw.Close()
+
+	// create parquet writer
+	pw, err := writer.NewParquetWriterFromWriter(fw, new(Blops6CampaignCheckpointExport), 4)
+	if err != nil {
+		return err
+	}
+
+	pw.RowGroupSize = 128 * 1024 * 1024 // 128MB
+	pw.CompressionType = parquet.CompressionCodec_SNAPPY
+
+	// Write each record
+	for _, checkpoint := range checkpoints {
+		export := *checkpoint.ToExport()
+		// set duration to seconds
+		if err := pw.Write(export); err != nil {
+			return err
+		}
+	}
+
+	if err = pw.WriteStop(); err != nil {
+		return err
 	}
 	return nil
 }
