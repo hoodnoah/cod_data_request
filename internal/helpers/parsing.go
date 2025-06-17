@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -19,11 +20,15 @@ func TryParseTimeUTC(ts string) (time.Time, error) {
 }
 
 func TryParseFloat(ts string) (float64, error) {
-	t, err := strconv.ParseFloat(ts, 32)
+	// trim off a percentage
+	tsClean := strings.TrimSuffix(ts, "%")
+
+	t, err := strconv.ParseFloat(tsClean, 32)
 	if err != nil {
 		return 0.0, err
 	}
-	return t, nil
+
+	return math.Round(t*100) / 100, nil
 }
 
 func TryParseInt(ts string) (int64, error) {
@@ -76,18 +81,11 @@ func ParseRowReflect[T any](header []string, row []string, tagName string, field
 			return nil, fmt.Errorf("cannot set field %s", field.Name)
 		}
 
-		switch target := fieldVal.Interface().(type) {
-		case time.Time:
-			fieldVal.Set(reflect.ValueOf(val.(time.Time)))
-		case string:
-			fieldVal.SetString(val.(string))
-		case int:
-			fieldVal.SetInt(int64(val.(int)))
-		case float32:
-			fieldVal.SetFloat(float64(val.(int)))
-		default:
-			return nil, fmt.Errorf("unsupported type: %T", target)
+		valRef := reflect.ValueOf(val)
+		if !valRef.Type().ConvertibleTo(fieldVal.Type()) {
+			return nil, fmt.Errorf("cannot convert value of type %s to field type %s for column %q", valRef.Type(), fieldVal.Type(), column)
 		}
+		fieldVal.Set(valRef.Convert(fieldVal.Type()))
 	}
 	return &result, nil
 }
