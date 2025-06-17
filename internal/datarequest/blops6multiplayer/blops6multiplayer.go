@@ -1,7 +1,6 @@
 package blops6multiplayer
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"strconv"
@@ -9,6 +8,11 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/hoodnoah/cod_data_request/internal/helpers"
+)
+
+const (
+	h1Text = "Call of Duty: Black Ops 6"
+	h2Text = "Multiplayer Match Data (reverse chronological)"
 )
 
 var headerLabels = []string{
@@ -407,45 +411,10 @@ func (m *MultiplayerMatch) ToStringSlice() []string {
 	}
 }
 
-// parses a Black Ops 6 Multiplayer Match from a header and its rows
-func fromRow(header []string, row []string) (*MultiplayerMatch, error) {
-	if len(row) == 0 {
-		return nil, errors.New("no rows to parse")
-	}
-
-	if len(row) != len(header) {
-		return nil, fmt.Errorf("row/header length mismatch: %d (header) vs %d (row)", len(header), len(row))
-	}
-
-	return helpers.ParseRowReflect[MultiplayerMatch](header, row, "col", fieldParsers)
-}
+var fromRow = helpers.MakeFromRow[MultiplayerMatch]("col", fieldParsers)
 
 func FromHtml(doc *goquery.Document) (MultiplayerMatches, error) {
-	header, rows, err := helpers.FindTable(doc, "Call of Duty: Black Ops 6", "Multiplayer Match Data (reverse chronological)")
-	if err != nil {
-		return nil, err
-	}
-
-	if len(header) == 0 {
-		return nil, errors.New("header row not found")
-	}
-	if len(rows) == 0 {
-		return nil, errors.New("no rows found")
-	}
-
-	var result MultiplayerMatches
-	for i, row := range rows {
-		res, err := fromRow(header, row)
-		if err != nil {
-			return nil, err
-		}
-		if res == nil {
-			return nil, fmt.Errorf("row %d: %w", i+1, err)
-		}
-		result = append(result, res)
-	}
-
-	return result, nil
+	return helpers.FromHtmlTable(doc, h1Text, h2Text, fromRow)
 }
 
 func ToCSV(outputDir string, matches *MultiplayerMatches) error {

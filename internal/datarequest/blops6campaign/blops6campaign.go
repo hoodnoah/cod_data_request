@@ -2,8 +2,7 @@ package blops6campaign
 
 import (
 	// std
-	"errors"
-	"fmt"
+
 	"path"
 	"strconv"
 	"time"
@@ -13,6 +12,11 @@ import (
 
 	// internal
 	"github.com/hoodnoah/cod_data_request/internal/helpers"
+)
+
+const (
+	h1Text = "Call of Duty: Black Ops 6"
+	h2Text = "Campaign Checkpoint Data (reverse chronological)"
 )
 
 var headerLabels = []string{
@@ -93,46 +97,10 @@ func (b *Checkpoint) ToStringSlice() []string {
 	}
 }
 
-// parses a BlackOps6CampaignCheckpoint from a header and its rows
-func fromRow(header []string, row []string) (*Checkpoint, error) {
-	if len(row) == 0 {
-		return nil, errors.New("no rows to parse")
-	}
-
-	if len(row) != len(header) {
-		return nil, fmt.Errorf("row/header length mismatch: %d vs %d", len(row), len(header))
-	}
-
-	return helpers.ParseRowReflect[Checkpoint](header, row, "col", fieldParsers)
-}
+var fromRow = helpers.MakeFromRow[Checkpoint]("col", fieldParsers)
 
 func FromHtml(doc *goquery.Document) (Checkpoints, error) {
-	header, rows, err := helpers.FindTable(doc, "Call of Duty: Black Ops 6", "Campaign Checkpoint Data (reverse chronological)")
-	if err != nil {
-		return nil, err
-	}
-
-	if len(header) == 0 {
-		return nil, errors.New("header row not found")
-	}
-	if len(rows) == 0 {
-		return nil, errors.New("no rows found")
-	}
-
-	var result []*Checkpoint
-
-	for i, row := range rows {
-		res, err := fromRow(header, row)
-		if err != nil {
-			return nil, err
-		}
-		if res == nil {
-			return nil, fmt.Errorf("row %d: %w", i+1, err)
-		}
-		result = append(result, res)
-	}
-
-	return result, nil
+	return helpers.FromHtmlTable(doc, h1Text, h2Text, fromRow)
 }
 
 // writes the checkpoints to CSV at the provided path

@@ -1,12 +1,15 @@
 package helpers
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 type FieldParser func(string) (any, error)
@@ -62,6 +65,54 @@ func tryParseInt(ts string) (int64, error) {
 	}
 
 	return i, nil
+}
+
+func MakeFromRow[T any](tagName string, parsers map[string]FieldParser) func([]string, []string) (*T, error) {
+	return func(header, row []string) (*T, error) {
+		if len(header) == 0 {
+			return nil, errors.New("expected a header with cells, received none")
+		}
+
+		if len(row) == 0 {
+			return nil, errors.New("expected a row with cells, received none")
+		}
+
+		if len(header) != len(row) {
+			return nil, fmt.Errorf("expected header (len %d) to equal row (len %d) length", len(header), len(row))
+		}
+
+		return ParseRowReflect[T](header, row, tagName, parsers)
+	}
+}
+
+func FromHtmlTable[T any](
+	doc *goquery.Document,
+	h1Text, h2Text string,
+	fromRow func([]string, []string) (*T, error),
+) ([]*T, error) {
+	header, rows, err := FindTable(doc, h1Text, h2Text)
+	if err != nil {
+		return nil, err
+	}
+	if len(header) == 0 {
+		return nil, errors.New("header row not found")
+	}
+	if len(rows) == 0 {
+		return nil, errors.New("no rows found")
+	}
+
+	var result []*T
+	for i, row := range rows {
+		res, err := fromRow(header, row)
+		if err != nil {
+			return nil, fmt.Errorf("row %d: %w", i+1, err)
+		}
+		if res == nil {
+			return nil, fmt.Errorf("row %d: nul result", i+1)
+		}
+		result = append(result, res)
+	}
+	return result, nil
 }
 
 func ParseRowReflect[T any](header []string, row []string, tagName string, fieldParsers map[string]FieldParser) (*T, error) {
