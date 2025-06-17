@@ -75,7 +75,7 @@ func (m *ModernWarfareCampaignSegment) ToStringSlice() []string {
 		m.Platform,
 		m.CampaignScreenName,
 		m.CampaignDifficulty,
-		fmt.Sprintf("%1f", m.TimeToCompleteCampaignSegment),
+		fmt.Sprintf("%.1f", m.TimeToCompleteCampaignSegment),
 		strconv.FormatUint(uint64(m.DeathsDuringCampaignSegment), 10),
 		strconv.FormatUint(uint64(m.FailsDuringCampaignSegment), 10),
 	}
