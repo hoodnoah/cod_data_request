@@ -8,19 +8,22 @@ import (
 	blops "github.com/hoodnoah/cod_data_request/internal/datarequest/blops6campaign"
 	blopsMP "github.com/hoodnoah/cod_data_request/internal/datarequest/blops6multiplayer"
 	cwZombies "github.com/hoodnoah/cod_data_request/internal/datarequest/coldwarzombies"
+	mwCampaign "github.com/hoodnoah/cod_data_request/internal/datarequest/modernwarfarecampaign"
 )
 
 type CodDataRequest struct {
-	BlackOps6CampaignCheckpoints blops.Checkpoints
-	BlackOps6MultiplayerMatches  blopsMP.MultiplayerMatches
-	ColdWarZombiesEvents         cwZombies.ColdWarZombiesEvents
+	BlackOps6CampaignCheckpoints  blops.Checkpoints
+	BlackOps6MultiplayerMatches   blopsMP.MultiplayerMatches
+	ColdWarZombiesEvents          cwZombies.ColdWarZombiesEvents
+	ModernWarfareCampaignSegments mwCampaign.ModernWarfareCampaignSegments
 }
 
 func NewCodDataRequest() CodDataRequest {
 	return CodDataRequest{
-		BlackOps6CampaignCheckpoints: nil,
-		BlackOps6MultiplayerMatches:  nil,
-		ColdWarZombiesEvents:         nil,
+		BlackOps6CampaignCheckpoints:  nil,
+		BlackOps6MultiplayerMatches:   nil,
+		ColdWarZombiesEvents:          nil,
+		ModernWarfareCampaignSegments: nil,
 	}
 }
 
@@ -44,6 +47,12 @@ func (c *CodDataRequest) ParseHtml(doc *goquery.Document) error {
 	}
 	c.ColdWarZombiesEvents = cwZombiesEvents
 
+	mwCampaignEvents, err := mwCampaign.FromHtml(doc)
+	if err != nil {
+		return err
+	}
+	c.ModernWarfareCampaignSegments = mwCampaignEvents
+
 	return nil
 }
 
@@ -61,6 +70,10 @@ func (c *CodDataRequest) ToCSV(outputDir string) error {
 		return err
 	}
 
+	if err := mwCampaign.ToCSV(outputDir, &c.ModernWarfareCampaignSegments); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -75,6 +88,10 @@ func (c *CodDataRequest) ToParquet(outputDir string) error {
 	}
 
 	if err := cwZombies.ToParquet(outputDir, &c.ColdWarZombiesEvents); err != nil {
+		return err
+	}
+
+	if err := mwCampaign.ToParquet(outputDir, &c.ModernWarfareCampaignSegments); err != nil {
 		return err
 	}
 
