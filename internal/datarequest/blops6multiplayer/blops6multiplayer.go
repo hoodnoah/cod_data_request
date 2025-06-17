@@ -3,6 +3,7 @@ package blops6multiplayer
 import (
 	"errors"
 	"fmt"
+	"path"
 	"strconv"
 	"time"
 
@@ -75,381 +76,93 @@ var headerLabels = []string{
 	"lifetime_near_misses",
 }
 
+func intParser() helpers.FieldParser {
+	return func(s string) (any, error) {
+		return helpers.TryParseInt(s)
+	}
+}
+
+func timeParser() helpers.FieldParser {
+	return func(s string) (any, error) {
+		return helpers.TryParseTimeUTC(s)
+	}
+}
+
+func stringParser() helpers.FieldParser {
+	return func(s string) (any, error) {
+		return s, nil
+	}
+}
+
+func floatParser() helpers.FieldParser {
+	return func(s string) (any, error) {
+		return helpers.TryParseFloat(s)
+	}
+}
+
 var fieldParsers = map[string]helpers.FieldParser{
-	"UTC Timestamp": func(s string) (any, error) {
-		t, err := helpers.TryParseTimeUTC(s)
-		if err != nil {
-			return nil, err
-		}
-		return t, nil
-	},
-	"Account Type": func(s string) (any, error) { return s, nil },
-	"Device Type":  func(s string) (any, error) { return s, nil },
-	"Game Type":    func(s string) (any, error) { return s, nil },
-	"Match ID":     func(s string) (any, error) { return s, nil },
-	"Match Start Timestamp": func(s string) (any, error) {
-		t, err := helpers.TryParseTimeUTC(s)
-		if err != nil {
-			return nil, err
-		}
-		return t, nil
-	},
-	"Match End Timestamp": func(s string) (any, error) {
-		t, err := helpers.TryParseTimeUTC(s)
-		if err != nil {
-			return nil, err
-		}
-		return t, nil
-	},
-	"Map":           func(s string) (any, error) { return s, nil },
-	"Team":          func(s string) (any, error) { return s, nil },
-	"Match Outcome": func(s string) (any, error) { return s, nil },
-	"Operator":      func(s string) (any, error) { return s, nil },
-	"Operator Skin": func(s string) (any, error) { return s, nil },
-	"Execution":     func(s string) (any, error) { return s, nil },
-	"Skill": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Score": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Shots": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Hits": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Assists": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Longest Streak": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Kills": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Deaths": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Headshots": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Executions": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Suicides": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Damage Done": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Damage Taken": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Armor Collected": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Armor Equipped": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Armor Destroyed": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Ground Vehicles Used": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Air Vehicles Used": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Percentage Of Time Moving": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Total XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Score XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Challenge XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Match XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Medal XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Bonus XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Misc XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Accolade XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Weapon XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Operator XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Clan XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Battle Pass XP": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Rank at Start": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Rank at End": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"XP at Start": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"XP at End": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Score at Start": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Score at End": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Prestige at Start": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Prestige at End": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Lifetime Wall Bangs": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Lifetime Games Played": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Lifetime Time Played": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Lifetime Wins": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Lifetime Losses": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Lifetime Kills": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Lifetime Deaths": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Lifetime Hits": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Lifetime Misses": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
-	"Lifetime Near Misses": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
-	},
+	"UTC Timestamp":             timeParser(),
+	"Account Type":              stringParser(),
+	"Device Type":               stringParser(),
+	"Game Type":                 stringParser(),
+	"Match ID":                  stringParser(),
+	"Match Start Timestamp":     timeParser(),
+	"Match End Timestamp":       timeParser(),
+	"Map":                       stringParser(),
+	"Team":                      stringParser(),
+	"Match Outcome":             stringParser(),
+	"Operator":                  stringParser(),
+	"Operator Skin":             stringParser(),
+	"Execution":                 stringParser(),
+	"Skill":                     intParser(),
+	"Score":                     intParser(),
+	"Shots":                     intParser(),
+	"Hits":                      intParser(),
+	"Assists":                   intParser(),
+	"Longest Streak":            intParser(),
+	"Kills":                     intParser(),
+	"Deaths":                    intParser(),
+	"Headshots":                 intParser(),
+	"Executions":                intParser(),
+	"Suicides":                  intParser(),
+	"Damage Done":               intParser(),
+	"Damage Taken":              intParser(),
+	"Armor Collected":           intParser(),
+	"Armor Equipped":            intParser(),
+	"Armor Destroyed":           intParser(),
+	"Ground Vehicles Used":      intParser(),
+	"Air Vehicles Used":         intParser(),
+	"Percentage Of Time Moving": floatParser(),
+	"Total XP":                  intParser(),
+	"Score XP":                  intParser(),
+	"Challenge XP":              intParser(),
+	"Match XP":                  intParser(),
+	"Medal XP":                  intParser(),
+	"Bonus XP":                  intParser(),
+	"Misc XP":                   intParser(),
+	"Accolade XP":               intParser(),
+	"Weapon XP":                 intParser(),
+	"Operator XP":               intParser(),
+	"Clan XP":                   intParser(),
+	"Battle Pass XP":            intParser(),
+	"Rank at Start":             intParser(),
+	"Rank at End":               intParser(),
+	"XP at Start":               intParser(),
+	"XP at End":                 intParser(),
+	"Score at Start":            intParser(),
+	"Score at End":              intParser(),
+	"Prestige at Start":         intParser(),
+	"Prestige at End":           intParser(),
+	"Lifetime Wall Bangs":       intParser(),
+	"Lifetime Games Played":     intParser(),
+	"Lifetime Time Played":      intParser(),
+	"Lifetime Wins":             intParser(),
+	"Lifetime Losses":           intParser(),
+	"Lifetime Kills":            intParser(),
+	"Lifetime Deaths":           intParser(),
+	"Lifetime Hits":             intParser(),
+	"Lifetime Misses":           intParser(),
+	"Lifetime Near Misses":      intParser(),
 }
 
 type MultiplayerMatch struct {
@@ -458,8 +171,8 @@ type MultiplayerMatch struct {
 	DeviceType             string    `col:"Device Type"`
 	GameType               string    `col:"Game Type"`
 	MatchID                string    `col:"Match ID"`
-	MatchStart             time.Time `col:"Match Start"`
-	MatchEnd               time.Time `col:"Match End"`
+	MatchStart             time.Time `col:"Match Start Timestamp"`
+	MatchEnd               time.Time `col:"Match End Timestamp"`
 	Map                    string    `col:"Map"`
 	Team                   string    `col:"Team"`
 	MatchOutcome           string    `col:"Match Outcome"`
@@ -728,276 +441,7 @@ func fromRow(header []string, row []string) (*MultiplayerMatch, error) {
 		return nil, fmt.Errorf("row/header length mismatch: %d (header) vs %d (row)", len(header), len(row))
 	}
 
-	var (
-		Timestamp              time.Time
-		AccountType            string
-		DeviceType             string
-		GameType               string
-		MatchID                string
-		MatchStart             time.Time
-		MatchEnd               time.Time
-		Map                    string
-		Team                   string
-		MatchOutcome           string
-		Operator               string
-		OperatorSkin           string
-		Execution              string
-		Skill                  int
-		Score                  int
-		Shots                  int
-		Hits                   int
-		Assists                int
-		LongestStreak          int
-		Kills                  int
-		Deaths                 int
-		Headshots              int
-		Executions             int
-		Suicides               int
-		DamageDone             int
-		DamageTaken            int
-		ArmorCollected         int
-		ArmorEquipped          int
-		ArmorDestroyed         int
-		GroundVehiclesUsed     int
-		AirVehiclesUsed        int
-		PercentageOfTimeMoving float32
-		TotalXP                int
-		ScoreXP                int
-		ChallengeXP            int
-		MatchXP                int
-		MedalXP                int
-		BonusXP                int
-		MiscXP                 int
-		AccoladeXP             int
-		WeaponXP               int
-		OperatorXP             int
-		ClanXP                 int
-		BattlePassXP           int
-		RankAtStart            int
-		RankAtEnd              int
-		XPAtStart              int
-		XPAtEnd                int
-		ScoreAtStart           int
-		ScoreAtEnd             int
-		PrestigeAtStart        int
-		PrestigeAtEnd          int
-		LifetimeWallBangs      int
-		LifetimeGamesPlayed    int
-		LifetimeTimePlayed     int
-		LifetimeWins           int
-		LifetimeLosses         int
-		LifetimeKills          int
-		LifetimeDeaths         int
-		LifetimeHits           int
-		LifetimeMisses         int
-		LifetimeNearMisses     int
-	)
-
-	for i, column := range header {
-		cell := row[i]
-		parser, ok := fieldParsers[column]
-		if !ok {
-			return nil, fmt.Errorf("unexpected column name: %s", column)
-		}
-
-		val, err := parser(cell)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing column %q on value %d: %v", column, i, err)
-		}
-
-		switch column {
-		case "UTC Timestamp":
-			Timestamp = val.(time.Time)
-		case "Account Type":
-			AccountType = val.(string)
-		case "Device Type":
-			DeviceType = val.(string)
-		case "Game Type":
-			GameType = val.(string)
-		case "Match ID":
-			MatchID = val.(string)
-		case "Match Start Timestamp":
-			MatchStart = val.(time.Time)
-		case "Match End Timestamp":
-			MatchEnd = val.(time.Time)
-		case "Map":
-			Map = val.(string)
-		case "Team":
-			Team = val.(string)
-		case "Match Outcome":
-			MatchOutcome = val.(string)
-		case "Operator":
-			Operator = val.(string)
-		case "Operator Skin":
-			OperatorSkin = val.(string)
-		case "Execution":
-			Execution = val.(string)
-		case "Skill":
-			Skill = val.(int)
-		case "Score":
-			Score = val.(int)
-		case "Shots":
-			Shots = val.(int)
-		case "Hits":
-			Hits = val.(int)
-		case "Assists":
-			Assists = val.(int)
-		case "Longest Streak":
-			LongestStreak = val.(int)
-		case "Kills":
-			Kills = val.(int)
-		case "Deaths":
-			Deaths = val.(int)
-		case "Headshots":
-			Headshots = val.(int)
-		case "Executions":
-			Executions = val.(int)
-		case "Suicides":
-			Suicides = val.(int)
-		case "Damage Done":
-			DamageDone = val.(int)
-		case "Damage Taken":
-			DamageTaken = val.(int)
-		case "Armor Collected":
-			ArmorCollected = val.(int)
-		case "Armor Equipped":
-			ArmorEquipped = val.(int)
-		case "Armor Destroyed":
-			ArmorDestroyed = val.(int)
-		case "Ground Vehicles Used":
-			GroundVehiclesUsed = val.(int)
-		case "Air Vehicles Used":
-			AirVehiclesUsed = val.(int)
-		case "Percentage Of Time Moving":
-			PercentageOfTimeMoving = val.(float32)
-		case "Total XP":
-			TotalXP = val.(int)
-		case "Score XP":
-			ScoreXP = val.(int)
-		case "Challenge XP":
-			ChallengeXP = val.(int)
-		case "Match XP":
-			MatchXP = val.(int)
-		case "Medal XP":
-			MedalXP = val.(int)
-		case "Bonus XP":
-			BonusXP = val.(int)
-		case "Misc XP":
-			MiscXP = val.(int)
-		case "Accolade XP":
-			AccoladeXP = val.(int)
-		case "Weapon XP":
-			WeaponXP = val.(int)
-		case "Operator XP":
-			OperatorXP = val.(int)
-		case "Clan XP":
-			ClanXP = val.(int)
-		case "Battle Pass XP":
-			BattlePassXP = val.(int)
-		case "Rank at Start":
-			RankAtStart = val.(int)
-		case "Rank at End":
-			RankAtEnd = val.(int)
-		case "XP at Start":
-			XPAtStart = val.(int)
-		case "XP at End":
-			XPAtEnd = val.(int)
-		case "Score at Start":
-			ScoreAtStart = val.(int)
-		case "Score at End":
-			ScoreAtEnd = val.(int)
-		case "Prestige at Start":
-			PrestigeAtStart = val.(int)
-		case "Prestige at End":
-			PrestigeAtEnd = val.(int)
-		case "Lifetime Wall Bangs":
-			LifetimeWallBangs = val.(int)
-		case "Lifetime Games Played":
-			LifetimeGamesPlayed = val.(int)
-		case "Lifetime Time Played":
-			LifetimeTimePlayed = val.(int)
-		case "Lifetime Wins":
-			LifetimeWins = val.(int)
-		case "Lifetime Losses":
-			LifetimeLosses = val.(int)
-		case "Lifetime Kills":
-			LifetimeKills = val.(int)
-		case "Lifetime Deaths":
-			LifetimeDeaths = val.(int)
-		case "Lifetime Hits":
-			LifetimeHits = val.(int)
-		case "Lifetime Misses":
-			LifetimeMisses = val.(int)
-		case "Lifetime Near Misses":
-			LifetimeNearMisses = val.(int)
-		}
-	}
-
-	return &MultiplayerMatch{
-		Timestamp:              Timestamp.UTC(),
-		AccountType:            AccountType,
-		DeviceType:             DeviceType,
-		GameType:               GameType,
-		MatchID:                MatchID,
-		MatchStart:             MatchStart.UTC(),
-		MatchEnd:               MatchEnd.UTC(),
-		Map:                    Map,
-		Team:                   Team,
-		MatchOutcome:           MatchOutcome,
-		Operator:               Operator,
-		OperatorSkin:           OperatorSkin,
-		Execution:              Execution,
-		Skill:                  Skill,
-		Score:                  Score,
-		Shots:                  Shots,
-		Hits:                   Hits,
-		Assists:                Assists,
-		LongestStreak:          LongestStreak,
-		Kills:                  Kills,
-		Deaths:                 Deaths,
-		Headshots:              Headshots,
-		Executions:             Executions,
-		Suicides:               Suicides,
-		DamageDone:             DamageDone,
-		DamageTaken:            DamageTaken,
-		ArmorCollected:         ArmorCollected,
-		ArmorEquipped:          ArmorEquipped,
-		ArmorDestroyed:         ArmorDestroyed,
-		GroundVehiclesUsed:     GroundVehiclesUsed,
-		AirVehiclesUsed:        AirVehiclesUsed,
-		PercentageOfTimeMoving: PercentageOfTimeMoving,
-		TotalXP:                TotalXP,
-		ScoreXP:                ScoreXP,
-		ChallengeXP:            ChallengeXP,
-		MatchXP:                MatchXP,
-		MedalXP:                MedalXP,
-		BonusXP:                BonusXP,
-		MiscXP:                 MiscXP,
-		AccoladeXP:             AccoladeXP,
-		WeaponXP:               WeaponXP,
-		OperatorXP:             OperatorXP,
-		ClanXP:                 ClanXP,
-		BattlePassXP:           BattlePassXP,
-		RankAtStart:            RankAtStart,
-		RankAtEnd:              RankAtEnd,
-		XPAtStart:              XPAtStart,
-		XPAtEnd:                XPAtEnd,
-		ScoreAtStart:           ScoreAtStart,
-		ScoreAtEnd:             ScoreAtEnd,
-		PrestigeAtStart:        PrestigeAtStart,
-		PrestigeAtEnd:          PrestigeAtEnd,
-		LifetimeWallBangs:      LifetimeWallBangs,
-		LifetimeGamesPlayed:    LifetimeGamesPlayed,
-		LifetimeTimePlayed:     LifetimeTimePlayed,
-		LifetimeWins:           LifetimeWins,
-		LifetimeLosses:         LifetimeLosses,
-		LifetimeKills:          LifetimeKills,
-		LifetimeDeaths:         LifetimeDeaths,
-		LifetimeHits:           LifetimeHits,
-		LifetimeMisses:         LifetimeMisses,
-		LifetimeNearMisses:     LifetimeNearMisses,
-	}, nil
-
+	return helpers.ParseRowReflect[MultiplayerMatch](header, row, "col", fieldParsers)
 }
 
 func FromHtml(doc *goquery.Document) (MultiplayerMatches, error) {
@@ -1026,4 +470,14 @@ func FromHtml(doc *goquery.Document) (MultiplayerMatches, error) {
 	}
 
 	return result, nil
+}
+
+func ToCSV(outputDir string, matches *MultiplayerMatches) error {
+	filename := path.Join(outputDir, "black_ops_6_multiplayer_matches.csv")
+	return helpers.ToCSV(filename, headerLabels, *matches)
+}
+
+func ToParquet(outputDir string, matches *MultiplayerMatches) error {
+	filename := path.Join(outputDir, "black_ops_6_multiplayer_matches.parquet")
+	return helpers.ToParquet(filename, *matches, new(MultiplayerMatchExport))
 }
