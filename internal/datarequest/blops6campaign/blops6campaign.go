@@ -2,7 +2,6 @@ package blops6campaign
 
 import (
 	// std
-
 	"errors"
 	"fmt"
 	"path"
@@ -16,8 +15,6 @@ import (
 	"github.com/hoodnoah/cod_data_request/internal/helpers"
 )
 
-type fieldParser func(string) (any, error)
-
 var headerLabels = []string{
 	"timestamp_utc",
 	"account_type",
@@ -30,7 +27,7 @@ var headerLabels = []string{
 	"fails",
 }
 
-var fieldParsers = map[string]fieldParser{
+var fieldParsers = map[string]helpers.FieldParser{
 	"UTC Timestamp": func(s string) (any, error) {
 		t, err := helpers.TryParseTimeUTC(s)
 		if err != nil {
