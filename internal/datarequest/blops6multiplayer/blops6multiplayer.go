@@ -76,93 +76,69 @@ var headerLabels = []string{
 	"lifetime_near_misses",
 }
 
-func intParser() helpers.FieldParser {
-	return func(s string) (any, error) {
-		return helpers.TryParseInt(s)
-	}
-}
-
-func timeParser() helpers.FieldParser {
-	return func(s string) (any, error) {
-		return helpers.TryParseTimeUTC(s)
-	}
-}
-
-func stringParser() helpers.FieldParser {
-	return func(s string) (any, error) {
-		return s, nil
-	}
-}
-
-func floatParser() helpers.FieldParser {
-	return func(s string) (any, error) {
-		return helpers.TryParseFloat(s)
-	}
-}
-
 var fieldParsers = map[string]helpers.FieldParser{
-	"UTC Timestamp":             timeParser(),
-	"Account Type":              stringParser(),
-	"Device Type":               stringParser(),
-	"Game Type":                 stringParser(),
-	"Match ID":                  stringParser(),
-	"Match Start Timestamp":     timeParser(),
-	"Match End Timestamp":       timeParser(),
-	"Map":                       stringParser(),
-	"Team":                      stringParser(),
-	"Match Outcome":             stringParser(),
-	"Operator":                  stringParser(),
-	"Operator Skin":             stringParser(),
-	"Execution":                 stringParser(),
-	"Skill":                     intParser(),
-	"Score":                     intParser(),
-	"Shots":                     intParser(),
-	"Hits":                      intParser(),
-	"Assists":                   intParser(),
-	"Longest Streak":            intParser(),
-	"Kills":                     intParser(),
-	"Deaths":                    intParser(),
-	"Headshots":                 intParser(),
-	"Executions":                intParser(),
-	"Suicides":                  intParser(),
-	"Damage Done":               intParser(),
-	"Damage Taken":              intParser(),
-	"Armor Collected":           intParser(),
-	"Armor Equipped":            intParser(),
-	"Armor Destroyed":           intParser(),
-	"Ground Vehicles Used":      intParser(),
-	"Air Vehicles Used":         intParser(),
-	"Percentage Of Time Moving": floatParser(),
-	"Total XP":                  intParser(),
-	"Score XP":                  intParser(),
-	"Challenge XP":              intParser(),
-	"Match XP":                  intParser(),
-	"Medal XP":                  intParser(),
-	"Bonus XP":                  intParser(),
-	"Misc XP":                   intParser(),
-	"Accolade XP":               intParser(),
-	"Weapon XP":                 intParser(),
-	"Operator XP":               intParser(),
-	"Clan XP":                   intParser(),
-	"Battle Pass XP":            intParser(),
-	"Rank at Start":             intParser(),
-	"Rank at End":               intParser(),
-	"XP at Start":               intParser(),
-	"XP at End":                 intParser(),
-	"Score at Start":            intParser(),
-	"Score at End":              intParser(),
-	"Prestige at Start":         intParser(),
-	"Prestige at End":           intParser(),
-	"Lifetime Wall Bangs":       intParser(),
-	"Lifetime Games Played":     intParser(),
-	"Lifetime Time Played":      intParser(),
-	"Lifetime Wins":             intParser(),
-	"Lifetime Losses":           intParser(),
-	"Lifetime Kills":            intParser(),
-	"Lifetime Deaths":           intParser(),
-	"Lifetime Hits":             intParser(),
-	"Lifetime Misses":           intParser(),
-	"Lifetime Near Misses":      intParser(),
+	"UTC Timestamp":             helpers.TimeParser(),
+	"Account Type":              helpers.StringParser(),
+	"Device Type":               helpers.StringParser(),
+	"Game Type":                 helpers.StringParser(),
+	"Match ID":                  helpers.StringParser(),
+	"Match Start Timestamp":     helpers.TimeParser(),
+	"Match End Timestamp":       helpers.TimeParser(),
+	"Map":                       helpers.StringParser(),
+	"Team":                      helpers.StringParser(),
+	"Match Outcome":             helpers.StringParser(),
+	"Operator":                  helpers.StringParser(),
+	"Operator Skin":             helpers.StringParser(),
+	"Execution":                 helpers.StringParser(),
+	"Skill":                     helpers.IntParser(),
+	"Score":                     helpers.IntParser(),
+	"Shots":                     helpers.IntParser(),
+	"Hits":                      helpers.IntParser(),
+	"Assists":                   helpers.IntParser(),
+	"Longest Streak":            helpers.IntParser(),
+	"Kills":                     helpers.IntParser(),
+	"Deaths":                    helpers.IntParser(),
+	"Headshots":                 helpers.IntParser(),
+	"Executions":                helpers.IntParser(),
+	"Suicides":                  helpers.IntParser(),
+	"Damage Done":               helpers.IntParser(),
+	"Damage Taken":              helpers.IntParser(),
+	"Armor Collected":           helpers.IntParser(),
+	"Armor Equipped":            helpers.IntParser(),
+	"Armor Destroyed":           helpers.IntParser(),
+	"Ground Vehicles Used":      helpers.IntParser(),
+	"Air Vehicles Used":         helpers.IntParser(),
+	"Percentage Of Time Moving": helpers.FloatParser(),
+	"Total XP":                  helpers.IntParser(),
+	"Score XP":                  helpers.IntParser(),
+	"Challenge XP":              helpers.IntParser(),
+	"Match XP":                  helpers.IntParser(),
+	"Medal XP":                  helpers.IntParser(),
+	"Bonus XP":                  helpers.IntParser(),
+	"Misc XP":                   helpers.IntParser(),
+	"Accolade XP":               helpers.IntParser(),
+	"Weapon XP":                 helpers.IntParser(),
+	"Operator XP":               helpers.IntParser(),
+	"Clan XP":                   helpers.IntParser(),
+	"Battle Pass XP":            helpers.IntParser(),
+	"Rank at Start":             helpers.IntParser(),
+	"Rank at End":               helpers.IntParser(),
+	"XP at Start":               helpers.IntParser(),
+	"XP at End":                 helpers.IntParser(),
+	"Score at Start":            helpers.IntParser(),
+	"Score at End":              helpers.IntParser(),
+	"Prestige at Start":         helpers.IntParser(),
+	"Prestige at End":           helpers.IntParser(),
+	"Lifetime Wall Bangs":       helpers.IntParser(),
+	"Lifetime Games Played":     helpers.IntParser(),
+	"Lifetime Time Played":      helpers.IntParser(),
+	"Lifetime Wins":             helpers.IntParser(),
+	"Lifetime Losses":           helpers.IntParser(),
+	"Lifetime Kills":            helpers.IntParser(),
+	"Lifetime Deaths":           helpers.IntParser(),
+	"Lifetime Hits":             helpers.IntParser(),
+	"Lifetime Misses":           helpers.IntParser(),
+	"Lifetime Near Misses":      helpers.IntParser(),
 }
 
 type MultiplayerMatch struct {

@@ -28,51 +28,27 @@ var headerLabels = []string{
 }
 
 var fieldParsers = map[string]helpers.FieldParser{
-	"UTC Timestamp": func(s string) (any, error) {
-		t, err := helpers.TryParseTimeUTC(s)
-		if err != nil {
-			return nil, err
-		}
-		return t, nil
-	},
-	"Account Type": func(s string) (any, error) { return s, nil },
-	"Device Type":  func(s string) (any, error) { return s, nil },
-	"Difficulty":   func(s string) (any, error) { return s, nil },
-	"Level Name":   func(s string) (any, error) { return s, nil },
-	"Checkpoint":   func(s string) (any, error) { return s, nil },
-	"Checkpoint Duration": func(s string) (any, error) {
-		f, err := helpers.TryParseFloat(s)
-		if err != nil {
-			return 0.0, err
-		}
-		return time.Duration(f * float64(time.Second)), nil
-	},
-	"Deaths": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return 0, err
-		}
-		return i, nil
-	},
-	"Fails": func(s string) (any, error) {
-		i, err := helpers.TryParseInt(s)
-		if err != nil {
-			return 0, err
-		}
-		return i, nil
-	},
+	"UTC Timestamp":       helpers.TimeParser(),
+	"Account Type":        helpers.StringParser(),
+	"Device Type":         helpers.StringParser(),
+	"Difficulty":          helpers.StringParser(),
+	"Level Name":          helpers.StringParser(),
+	"Checkpoint":          helpers.StringParser(),
+	"Checkpoint Duration": helpers.FloatParser(),
+	"Deaths":              helpers.IntParser(),
+	"Fails":               helpers.IntParser(),
 }
 
 type Checkpoint struct {
-	Timestamp          time.Time
-	AccountType        string
-	DeviceType         string
-	Difficulty         string
-	LevelName          string
-	Checkpoint         string
-	CheckpointDuration time.Duration
-	Deaths             uint
-	Fails              uint
+	Timestamp          time.Time     `col:"UTC Timestamp"`
+	AccountType        string        `col:"Account Type"`
+	DeviceType         string        `col:"Device Type"`
+	Difficulty         string        `col:"Difficulty"`
+	LevelName          string        `col:"Level Name"`
+	Checkpoint         string        `col:"Checkpoint"`
+	CheckpointDuration time.Duration `col:"Checkpoint Duration"`
+	Deaths             uint          `col:"Deaths"`
+	Fails              uint          `col:"Fails"`
 }
 
 type Checkpoints []*Checkpoint
@@ -127,59 +103,7 @@ func fromRow(header []string, row []string) (*Checkpoint, error) {
 		return nil, fmt.Errorf("row/header length mismatch: %d vs %d", len(row), len(header))
 	}
 
-	var (
-		timestamp                                                  time.Time
-		accountType, deviceType, difficulty, levelName, checkpoint string
-		checkpointDuration                                         time.Duration
-		deaths, fails                                              uint
-	)
-
-	for i, column := range header {
-		cell := row[i]
-		parser, ok := fieldParsers[column]
-		if !ok {
-			return nil, fmt.Errorf("unexpected column name: %s", column)
-		}
-
-		val, err := parser(cell)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing column %q: %v", column, err)
-		}
-
-		switch column {
-		case "UTC Timestamp":
-			timestamp = val.(time.Time)
-		case "Account Type":
-			accountType = val.(string)
-		case "Device Type":
-			deviceType = val.(string)
-		case "Difficulty":
-			difficulty = val.(string)
-		case "Level Name":
-			levelName = val.(string)
-		case "Checkpoint":
-			checkpoint = val.(string)
-		case "Checkpoint Duration":
-			checkpointDuration = val.(time.Duration)
-		case "Deaths":
-			deaths = uint(val.(int64))
-		case "Fails":
-			fails = uint(val.(int64))
-		}
-	}
-
-	return &Checkpoint{
-		Timestamp:          timestamp.UTC(),
-		AccountType:        accountType,
-		DeviceType:         deviceType,
-		Difficulty:         difficulty,
-		LevelName:          levelName,
-		Checkpoint:         checkpoint,
-		CheckpointDuration: checkpointDuration,
-		Deaths:             deaths,
-		Fails:              fails,
-	}, nil
-
+	return helpers.ParseRowReflect[Checkpoint](header, row, "col", fieldParsers)
 }
 
 func FromHtml(doc *goquery.Document) (Checkpoints, error) {

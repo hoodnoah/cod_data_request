@@ -11,7 +11,31 @@ import (
 
 type FieldParser func(string) (any, error)
 
-func TryParseTimeUTC(ts string) (time.Time, error) {
+func StringParser() FieldParser {
+	return func(s string) (any, error) {
+		return s, nil
+	}
+}
+
+func IntParser() FieldParser {
+	return func(s string) (any, error) {
+		return tryParseInt(s)
+	}
+}
+
+func FloatParser() FieldParser {
+	return func(s string) (any, error) {
+		return tryParseFloat(s)
+	}
+}
+
+func TimeParser() FieldParser {
+	return func(s string) (any, error) {
+		return tryParseTimeUTC(s)
+	}
+}
+
+func tryParseTimeUTC(ts string) (time.Time, error) {
 	t, err := time.Parse("2006-01-02 15:04:05", strings.TrimSpace(ts))
 	if err != nil {
 		return time.Time{}, err
@@ -19,7 +43,7 @@ func TryParseTimeUTC(ts string) (time.Time, error) {
 	return t.UTC(), nil
 }
 
-func TryParseFloat(ts string) (float64, error) {
+func tryParseFloat(ts string) (float64, error) {
 	// trim off a percentage
 	tsClean := strings.TrimSuffix(ts, "%")
 
@@ -31,7 +55,7 @@ func TryParseFloat(ts string) (float64, error) {
 	return math.Round(t*100) / 100, nil
 }
 
-func TryParseInt(ts string) (int64, error) {
+func tryParseInt(ts string) (int64, error) {
 	i, err := strconv.ParseInt(ts, 10, 32)
 	if err != nil {
 		return 0, err
