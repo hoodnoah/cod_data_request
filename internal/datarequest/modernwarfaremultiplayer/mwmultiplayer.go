@@ -15,7 +15,7 @@ const (
 )
 
 var fieldParsers = map[string]helpers.FieldParser{
-	"UTC Timestamp":         helpers.TimeParser(),
+	"UTC Timestamp":         helpers.TimestampToUnixMillisInt64(),
 	"Match ID":              helpers.StringParser(),
 	"Platform":              helpers.StringParser(),
 	"Game Type Screen Name": helpers.StringParser(),
@@ -47,72 +47,38 @@ var headerLabels = []string{
 }
 
 type MWMultiplayerMatch struct {
-	Timestamp          time.Time `col:"UTC Timestamp"`
-	MatchID            string    `col:"Match ID"`
-	Platform           string    `col:"Platform"`
-	GameTypeScreenName string    `col:"Game Type Screen Name"`
-	MapScreenName      string    `col:"Map Screen Name"`
-	Rank               int       `col:"Rank"`
-	Score              int       `col:"Score"`
-	Assists            int       `col:"Assists"`
-	Kills              int       `col:"Kills"`
-	Deaths             int       `col:"Deaths"`
-	Headshots          int       `col:"Headshots"`
-	LongestStreak      int       `col:"Longest Streak"`
-	TotalXPEarned      int       `col:"Total XP Earned"`
+	Timestamp          int64  `col:"UTC Timestamp" parquet:"name=timestamp_utc, type=INT64, convertedtype=TIMESTAMP_MILLIS"`
+	MatchID            string `col:"Match ID" parquet:"name=match_id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	Platform           string `col:"Platform" parquet:"name=platform, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	GameTypeScreenName string `col:"Game Type Screen Name" parquet:"name=game_type_screen_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	MapScreenName      string `col:"Map Screen Name" parquet:"name=map_screen_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	Rank               int64  `col:"Rank" parquet:"name=rank, type=INT64"`
+	Score              int64  `col:"Score" parquet:"name=score, type=INT64"`
+	Assists            int64  `col:"Assists" parquet:"name=assists, type=INT64"`
+	Kills              int64  `col:"Kills" parquet:"name=kills, type=INT64"`
+	Deaths             int64  `col:"Deaths" parquet:"name=deaths, type=INT64"`
+	Headshots          int64  `col:"Headshots" parquet:"name=headshots, type=INT64"`
+	LongestStreak      int64  `col:"Longest Streak" parquet:"name=longest_streak, type=INT64"`
+	TotalXPEarned      int64  `col:"Total XP Earned" parquet:"name=total_xp_earned, type=INT64"`
 }
 
 type MWMultiplayerMatches []*MWMultiplayerMatch
 
-type MWMultiplayerMatchExport struct {
-	Timestamp          int64  `parquet:"name=timestamp_utc, type=INT64, convertedtype=TIMESTAMP_MILLIS"`
-	MatchID            string `parquet:"name=match_id, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	Platform           string `parquet:"name=platform, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	GameTypeScreenName string `parquet:"name=game_type_screen_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	MapScreenName      string `parquet:"name=map_screen_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	Rank               int64  `parquet:"name=rank, type=INT64"`
-	Score              int64  `parquet:"name=score, type=INT64"`
-	Assists            int64  `parquet:"name=assists, type=INT64"`
-	Kills              int64  `parquet:"name=kills, type=INT64"`
-	Deaths             int64  `parquet:"name=deaths, type=INT64"`
-	Headshots          int64  `parquet:"name=headshots, type=INT64"`
-	LongestStreak      int64  `parquet:"name=longest_streak, type=INT64"`
-	TotalXPEarned      int64  `parquet:"name=total_xp_earned, type=INT64"`
-}
-
-func (m *MWMultiplayerMatch) ToExport() any {
-	return &MWMultiplayerMatchExport{
-		Timestamp:          m.Timestamp.UnixMilli(),
-		MatchID:            m.MatchID,
-		Platform:           m.Platform,
-		GameTypeScreenName: m.GameTypeScreenName,
-		MapScreenName:      m.MapScreenName,
-		Rank:               int64(m.Rank),
-		Score:              int64(m.Score),
-		Assists:            int64(m.Assists),
-		Kills:              int64(m.Kills),
-		Deaths:             int64(m.Deaths),
-		Headshots:          int64(m.Headshots),
-		LongestStreak:      int64(m.LongestStreak),
-		TotalXPEarned:      int64(m.TotalXPEarned),
-	}
-}
-
 func (m *MWMultiplayerMatch) ToStringSlice() []string {
 	return []string{
-		m.Timestamp.Format("2006-01-02 15:04:05"),
+		time.UnixMilli(m.Timestamp).UTC().Format(time.RFC3339),
 		m.MatchID,
 		m.Platform,
 		m.GameTypeScreenName,
 		m.MapScreenName,
-		strconv.FormatUint(uint64(m.Rank), 10),
-		strconv.FormatUint(uint64(m.Score), 10),
-		strconv.FormatUint(uint64(m.Assists), 10),
-		strconv.FormatUint(uint64(m.Kills), 10),
-		strconv.FormatUint(uint64(m.Deaths), 10),
-		strconv.FormatUint(uint64(m.Headshots), 10),
-		strconv.FormatUint(uint64(m.LongestStreak), 10),
-		strconv.FormatUint(uint64(m.TotalXPEarned), 10),
+		strconv.FormatInt(m.Rank, 10),
+		strconv.FormatInt(m.Score, 10),
+		strconv.FormatInt(m.Assists, 10),
+		strconv.FormatInt(m.Kills, 10),
+		strconv.FormatInt(m.Deaths, 10),
+		strconv.FormatInt(m.Headshots, 10),
+		strconv.FormatInt(m.LongestStreak, 10),
+		strconv.FormatInt(m.TotalXPEarned, 10),
 	}
 }
 
@@ -129,5 +95,5 @@ func ToCSV(outputDir string, matches *MWMultiplayerMatches) error {
 
 func ToParquet(outputdir string, matches *MWMultiplayerMatches) error {
 	filename := path.Join(outputdir, "modern_warfare_multiplayer_matches.parquet")
-	return helpers.ToParquet(filename, *matches, new(MWMultiplayerMatchExport))
+	return helpers.ToParquet(filename, *matches, new(MWMultiplayerMatch))
 }

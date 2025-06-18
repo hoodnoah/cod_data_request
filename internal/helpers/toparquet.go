@@ -29,7 +29,7 @@ func ToParquet[T types.ParquetExportable](outputDir string, items []T, schema an
 
 	// Write each record
 	for _, item := range items {
-		if err := pw.Write(item.ToExport()); err != nil {
+		if err := pw.Write(item); err != nil {
 			return err
 		}
 	}

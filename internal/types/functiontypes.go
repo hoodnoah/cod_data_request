@@ -5,7 +5,6 @@ type CSVExportable interface {
 }
 
 type ParquetExportable interface {
-	ToExport() any
 }
 
 type Exportables[T any] []T
