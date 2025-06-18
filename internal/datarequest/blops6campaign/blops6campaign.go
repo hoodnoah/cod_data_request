@@ -3,6 +3,7 @@ package blops6campaign
 import (
 	// std
 
+	"fmt"
 	"path"
 	"strconv"
 	"time"
@@ -32,7 +33,7 @@ var headerLabels = []string{
 }
 
 var fieldParsers = map[string]helpers.FieldParser{
-	"UTC Timestamp":       helpers.TimeParser(),
+	"UTC Timestamp":       helpers.TimestampToUnixMillisInt64(),
 	"Account Type":        helpers.StringParser(),
 	"Device Type":         helpers.StringParser(),
 	"Difficulty":          helpers.StringParser(),
@@ -44,56 +45,38 @@ var fieldParsers = map[string]helpers.FieldParser{
 }
 
 type Checkpoint struct {
-	Timestamp          time.Time     `col:"UTC Timestamp"`
-	AccountType        string        `col:"Account Type"`
-	DeviceType         string        `col:"Device Type"`
-	Difficulty         string        `col:"Difficulty"`
-	LevelName          string        `col:"Level Name"`
-	Checkpoint         string        `col:"Checkpoint"`
-	CheckpointDuration time.Duration `col:"Checkpoint Duration"`
-	Deaths             uint          `col:"Deaths"`
-	Fails              uint          `col:"Fails"`
+	Timestamp          int64   `col:"UTC Timestamp" parquet:"name=timestamp_ms_utc, type=INT64, convertedtype=TIMESTAMP_MILLIS"`
+	AccountType        string  `col:"Account Type" parquet:"name=account_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	DeviceType         string  `col:"Device Type" parquet:"name=device_type , type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	Difficulty         string  `col:"Difficulty" parquet:"name=difficulty, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	LevelName          string  `col:"Level Name" parquet:"name=level_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	Checkpoint         string  `col:"Checkpoint" parquet:"name=checkpoint, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	CheckpointDuration float64 `col:"Checkpoint Duration" parquet:"name=checkpoint_duration, type=FLOAT"`
+	Deaths             int64   `col:"Deaths" parquet:"name=deaths, type=INT64, convertedtype=UINT_64"`
+	Fails              int64   `col:"Fails" parquet:"name=fails, type=INT64, convertedtype=UINT_64"`
 }
 
 type Checkpoints []*Checkpoint
 
-type checkpointExport struct {
-	Timestamp          int64   `parquet:"name=timestamp_utc, type=INT64, convertedtype=TIMESTAMP_MILLIS"`
-	AccountType        string  `parquet:"name=account_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	DeviceType         string  `parquet:"name=device_type, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	Difficulty         string  `parquet:"name=difficulty, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	LevelName          string  `parquet:"name=level_name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	Checkpoint         string  `parquet:"name=checkpoint, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
-	CheckpointDuration float32 `parquet:"name=checkpoint_duration_s, type=FLOAT"`
-	Deaths             int32   `parquet:"name=deaths, type=INT32"`
-	Fails              int32   `parquet:"name=fails, type=INT32"`
-}
+type checkpointExport = Checkpoint
 
 func (b *Checkpoint) ToExport() any {
-	return &checkpointExport{
-		Timestamp:          b.Timestamp.UnixMilli(),
-		AccountType:        b.AccountType,
-		DeviceType:         b.DeviceType,
-		Difficulty:         b.Difficulty,
-		LevelName:          b.LevelName,
-		Checkpoint:         b.Checkpoint,
-		CheckpointDuration: float32(b.CheckpointDuration.Seconds()),
-		Deaths:             int32(b.Deaths),
-		Fails:              int32(b.Fails),
-	}
+	return b
 }
 
 func (b *Checkpoint) ToStringSlice() []string {
+	t := time.UnixMilli(b.Timestamp).UTC().Format(time.RFC3339)
+
 	return []string{
-		b.Timestamp.UTC().Format("2006-01-02 15:04:05"),
+		t,
 		b.AccountType,
 		b.DeviceType,
 		b.Difficulty,
 		b.LevelName,
 		b.Checkpoint,
-		strconv.FormatInt(int64(b.CheckpointDuration.Seconds()), 10),
-		strconv.FormatUint(uint64(b.Deaths), 10),
-		strconv.FormatUint(uint64(b.Fails), 10),
+		fmt.Sprintf("%.1f", b.CheckpointDuration),
+		strconv.FormatInt(b.Deaths, 10),
+		strconv.FormatInt(b.Fails, 10),
 	}
 }
 

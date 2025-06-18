@@ -38,6 +38,16 @@ func TimeParser() FieldParser {
 	}
 }
 
+func TimestampToUnixMillisInt64() FieldParser {
+	return func(s string) (any, error) {
+		ts, err := tryParseTimeUTC(s)
+		if err != nil {
+			return 0, err
+		}
+		return ts.UnixMilli(), nil
+	}
+}
+
 func tryParseTimeUTC(ts string) (time.Time, error) {
 	t, err := time.Parse("2006-01-02 15:04:05", strings.TrimSpace(ts))
 	if err != nil {
