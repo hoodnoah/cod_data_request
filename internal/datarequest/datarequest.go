@@ -11,6 +11,7 @@ import (
 	mwCampaign "github.com/hoodnoah/cod_data_request/internal/datarequest/modernwarfarecampaign"
 	mwCoop "github.com/hoodnoah/cod_data_request/internal/datarequest/modernwarfarecoop"
 	mwMp "github.com/hoodnoah/cod_data_request/internal/datarequest/modernwarfaremultiplayer"
+	wz2Mp "github.com/hoodnoah/cod_data_request/internal/datarequest/warzone2"
 )
 
 type CodDataRequest struct {
@@ -20,6 +21,7 @@ type CodDataRequest struct {
 	ModernWarfareCampaignSegments mwCampaign.ModernWarfareCampaignSegments
 	ModernWarfareCoops            mwCoop.ModernWarfareCoops
 	ModernWarfareMPMatches        mwMp.MWMultiplayerMatches
+	Warzone2MPMatches             wz2Mp.Warzone2Matches
 }
 
 func NewCodDataRequest() CodDataRequest {
@@ -30,6 +32,7 @@ func NewCodDataRequest() CodDataRequest {
 		ModernWarfareCampaignSegments: nil,
 		ModernWarfareCoops:            nil,
 		ModernWarfareMPMatches:        nil,
+		Warzone2MPMatches:             nil,
 	}
 }
 
@@ -71,6 +74,12 @@ func (c *CodDataRequest) ParseHtml(doc *goquery.Document) error {
 	}
 	c.ModernWarfareMPMatches = mwMpmatches
 
+	wz2Mpmatches, err := wz2Mp.FromHtml(doc)
+	if err != nil {
+		return err
+	}
+	c.Warzone2MPMatches = wz2Mpmatches
+
 	return nil
 }
 
@@ -100,6 +109,10 @@ func (c *CodDataRequest) ToCSV(outputDir string) error {
 		return err
 	}
 
+	if err := wz2Mp.ToCSV(outputDir, &c.Warzone2MPMatches); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -126,6 +139,10 @@ func (c *CodDataRequest) ToParquet(outputDir string) error {
 	}
 
 	if err := mwMp.ToParquet(outputDir, &c.ModernWarfareMPMatches); err != nil {
+		return err
+	}
+
+	if err := wz2Mp.ToParquet(outputDir, &c.Warzone2MPMatches); err != nil {
 		return err
 	}
 
